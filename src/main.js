@@ -41,9 +41,30 @@ function onKeyPress(ev)
     {
         loadMesh("sibenik");
     }
+    else if (str === "7")
+    {
+        loadMesh("sponza");
+    }
+    else if (str === "z")
+    {   
+        camera.position.z = "0";
+        camera.position.y = "1";
+    }
     else if (str === "w")
     {
         camera.position.z -= "1.0";
+    }
+    else if (str === "s")
+    {
+        camera.position.z += "1.0";
+    }
+    else if (str == "e")
+    {
+        camera.position.y += "1.0";
+    }
+    else if (str == "q")
+    {
+        camera.position.y -= "1.0";
     }
 }
 
