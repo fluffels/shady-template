@@ -7,7 +7,7 @@ var fov_r = fov * 3.14 / 180;
 
 function loadMesh(name)
 {
-    var path = "obj/" + name + "/" + name + ".js";
+    var path = MESH_PATH + "mesh.js";
     jsonLoader.load(path, onMeshLoaded);
 
     logger.info("Loading mesh at '" + path + "'...");
@@ -17,35 +17,7 @@ function onKeyPress(ev)
 {
     var str = String.fromCharCode(ev.charCode);
     console.log(str);
-    if (str === "1")
-    {
-        loadMesh("cube");
-    }
-    else if (str === "2")
-    {
-        loadMesh("teapot");
-    }
-    else if (str === "3")
-    {
-        loadMesh("cornell");
-    }
-    else if (str === "4")
-    {
-        loadMesh("conference");
-    }
-    else if (str === "5")
-    {
-        loadMesh("dragon");
-    }
-    else if (str === "6")
-    {
-        loadMesh("sibenik");
-    }
-    else if (str === "7")
-    {
-        loadMesh("sponza");
-    }
-    else if (str === "z")
+     if (str === "z")
     {   
         camera.position.z = "0";
         camera.position.y = "1";
