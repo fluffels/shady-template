@@ -5,12 +5,12 @@ var jsonLoader;
 var fov = 45;
 var fov_r = fov * 3.14 / 180;
 
-function loadMesh(name)
+function loadMesh(path)
 {
-    var path = MESH_PATH + "mesh.js";
-    jsonLoader.load(path, onMeshLoaded);
+    var url = path + "mesh.js";
+    jsonLoader.load(url, onMeshLoaded);
 
-    logger.info("Loading mesh at '" + path + "'...");
+    logger.info("Loading mesh at '" + url + "'...");
 }
 
 function onKeyPress(ev)
@@ -92,15 +92,18 @@ function main()
 function init()
 {
     scene = new THREE.Scene();
+
+    var div = $('#experiment-block-content')
+    var width = div.width()
+    var height = div.height()
     
-    camera = new THREE.PerspectiveCamera( fov, window.innerWidth /
-        window.innerHeight, 1, 5000 );
+    camera = new THREE.PerspectiveCamera( fov, width / height, 1, 5000 );
 
     scene = new THREE.Scene();
 
     jsonLoader = new THREE.JSONLoader();
     mesh = null;
-    loadMesh("teapot");
+    loadMesh(MESH_PATH);
 
     var ambient = new THREE.AmbientLight(0x404040);
     scene.add(ambient);
@@ -110,9 +113,9 @@ function init()
     scene.add(point);
 
     renderer = new THREE.WebGLRenderer();
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setSize( width, height );
 
-    document.body.appendChild( renderer.domElement );
+    div.append(renderer.domElement);
 }
 
 function animate()
