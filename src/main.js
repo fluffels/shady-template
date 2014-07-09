@@ -1,50 +1,132 @@
-var gl;
+var scene, camera, renderer;
+var mesh, geometry, material;
+var ready;
+var jsonLoader;
+var fov = 45;
+var fov_r = fov * 3.14 / 180;
 
-function display()
+function loadMesh(path)
 {
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    var url = path + "mesh.js";
+    jsonLoader.load(url, onMeshLoaded);
+
+    logger.info("Loading mesh at '" + url + "'...");
 }
 
-function keyboard(ev)
+function onKeyPress(ev)
 {
+    var str = String.fromCharCode(ev.charCode);
+    console.log(str);
+     if (str === "z")
+    {   
+        camera.position.z = "0";
+        camera.position.y = "1";
+    }
+    else if (str === "w")
+    {
+        camera.position.z -= "1.0";
+    }
+    else if (str === "s")
+    {
+        camera.position.z += "1.0";
+    }
+    else if (str == "e")
+    {
+        camera.position.y += "1.0";
+    }
+    else if (str == "q")
+    {
+        camera.position.y -= "1.0";
+    }
 }
 
-function reshape()
+function onMeshLoaded(geometry, materials)
 {
-    var newWidth = $("canvas").width();
-    var newHeight = $("canvas").height();
+    scene.remove(mesh);
 
-    $("canvas").attr("width", newWidth);
-    $("canvas").attr("height", newHeight);
-    gl.viewport(0, 0, newWidth, newHeight);
+    material = new THREE.MeshFaceMaterial(materials);
+    mesh = new THREE.Mesh(geometry, material);
 
-    logger.info("Resized: width = " + newWidth + " height = " + newHeight);
+    zoomOut();
 
-    display();
+    scene.add(mesh);
 }
 
-function update()
+function zoomOut()
 {
-    display();
+    mesh.geometry.computeBoundingBox();
+    camera.position.z = 1
+        + mesh.geometry.boundingBox.max.z
+        + mesh.geometry.boundingBox.max.y
+        / Math.tan(fov_r / 2);
+
+    logger.info("x in ["
+        + mesh.geometry.boundingBox.min.x
+        + ", "
+        + mesh.geometry.boundingBox.max.x
+        + "]");
+    logger.info("y in ["
+        + mesh.geometry.boundingBox.min.y
+        + ", "
+        + mesh.geometry.boundingBox.max.y
+        + "]");
+    logger.info("z in ["
+        + mesh.geometry.boundingBox.min.z
+        + ", "
+        + mesh.geometry.boundingBox.max.z
+        + "]");
+    logger.info("tan = " + Math.tan(fov_r));
+    logger.info("z = " + camera.position.z);
+
+    logger.info("Loaded mesh...");
 }
 
 function main()
 {
-    logger.trace("main()");
+    include("lib/three.js");
+    init();
+    $(window).keypress(onKeyPress);
+    animate();
+}
 
-    gl = get_web_gl_context();
-    if (gl == null)
+function init()
+{
+    scene = new THREE.Scene();
+
+    var div = $('#experiment-block-content')
+    var width = div.width()
+    var height = div.height()
+    
+    camera = new THREE.PerspectiveCamera( fov, width / height, 1, 5000 );
+
+    scene = new THREE.Scene();
+
+    jsonLoader = new THREE.JSONLoader();
+    mesh = null;
+    loadMesh(MESH_PATH);
+
+    var ambient = new THREE.AmbientLight(0x404040);
+    scene.add(ambient);
+
+    var point = new THREE.PointLight(0xA0A0A0);
+    point.position.set(0, 0, 1000);
+    scene.add(point);
+
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize( width, height );
+
+    div.append(renderer.domElement);
+}
+
+function animate()
+{
+    requestAnimationFrame( animate );
+
+    if (mesh !== null)
     {
-        logger.fatal("No WebGL context could be created!");
+        mesh.rotation.y += 0.01;
+
+        renderer.render( scene, camera );
     }
-
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-
-    $(window).resize(reshape);
-    $(window).keypress(keyboard);
-
-    window.setInterval(update, 16);
-
-    reshape();
 }
 

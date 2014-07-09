@@ -8,9 +8,11 @@
         <!-- This stylesheet is only used by the demo HTML to ease development. -->
         <link rel="stylesheet" type="text/css" href="css/style.css">
 
-        <!-- This variable is necessary for include() and load_file() to know what the URL is for the files to load. -->
+        <!-- The PATH variable is necessary for include() and load_file() to know what the URL is for the files to load. -->
+        <!-- The MESH_PATH variable is necessary for load_mesh() to know where to load the mesh from. -->
         <script type="text/javascript">
         PATH="";
+        MESH_PATH="mesh/";
         </script>
         <!-- Linear algebra library. -->
         <script type="text/javascript" src="lib/gl-matrix.js"></script>
@@ -20,12 +22,10 @@
         <script type="text/javascript" src="lib/jquery.js"></script>
         <!-- bootstrap.js will set up the framework and then call main() is src/main.js -->
         <script type="text/javascript" src="lib/bootstrap.js"></script>
+        <script type="text/javascript" src="src/main.js"></script>
     </head>
 
     <body>
-        <canvas id="canvas">
-            Your browser does not support HTML5.
-        </canvas>
     </body>
 </html>
 
