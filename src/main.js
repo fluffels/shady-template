@@ -31,9 +31,21 @@ function onKeyPress(ev)
     {
         camera.position.z += 1.0;
     }
+    else if (str == "a")
+    {
+        mesh.rotation.y -= 0.1; 
+    }
+    else if (str == "d")
+    {
+        mesh.rotation.y += 0.1;
+    }
     else if (str == "e")
     {
         camera.position.y += 1.0;
+    }
+    else if (str == "c")
+    {
+        zoomOut();
     }
     else if (str == "q")
     {
@@ -48,7 +60,16 @@ function onMeshLoaded(geometry, materials)
     material = new THREE.MeshFaceMaterial(materials);
     mesh = new THREE.Mesh(geometry, material);
 
-    zoomOut();
+    var ms = mesh.material.materials;
+    for (i in ms)
+    {
+        m = ms[i];
+        if (m.map)
+        {
+            m.map.wrapS = THREE.RepeatWrapping;
+            m.map.wrapT = THREE.RepeatWrapping;
+        }
+    }
 
     scene.add(mesh);
 
@@ -88,11 +109,11 @@ function init()
     mesh = null;
     loadMesh(MESH_PATH);
 
-    var ambient = new THREE.AmbientLight(0x404040);
+    var ambient = new THREE.AmbientLight(0xAAAAAA);
     scene.add(ambient);
 
     var point = new THREE.PointLight(0xA0A0A0);
-    point.position.set(0, 0, 1000);
+    point.position.set(0, 0, 0);
     scene.add(point);
 
     renderer = new THREE.WebGLRenderer();
@@ -107,8 +128,6 @@ function animate()
 
     if (mesh !== null)
     {
-        mesh.rotation.y += 0.01;
-
         renderer.render( scene, camera );
     }
 }
