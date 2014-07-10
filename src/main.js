@@ -59,26 +59,6 @@ function zoomOut()
         + mesh.geometry.boundingBox.max.z
         + mesh.geometry.boundingBox.max.y
         / Math.tan(fov_r / 2);
-
-    logger.info("x in ["
-        + mesh.geometry.boundingBox.min.x
-        + ", "
-        + mesh.geometry.boundingBox.max.x
-        + "]");
-    logger.info("y in ["
-        + mesh.geometry.boundingBox.min.y
-        + ", "
-        + mesh.geometry.boundingBox.max.y
-        + "]");
-    logger.info("z in ["
-        + mesh.geometry.boundingBox.min.z
-        + ", "
-        + mesh.geometry.boundingBox.max.z
-        + "]");
-    logger.info("tan = " + Math.tan(fov_r));
-    logger.info("z = " + camera.position.z);
-
-    logger.info("Loaded mesh...");
 }
 
 function main()
