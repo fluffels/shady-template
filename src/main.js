@@ -50,6 +50,8 @@ function onMeshLoaded(geometry, materials)
     zoomOut();
 
     scene.add(mesh);
+
+    logger.info('Mesh loaded.');
 }
 
 function zoomOut()
