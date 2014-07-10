@@ -17,26 +17,27 @@ function onKeyPress(ev)
 {
     var str = String.fromCharCode(ev.charCode);
     console.log(str);
-     if (str === "z")
+
+    if (str === "z")
     {   
-        camera.position.z = "0";
-        camera.position.y = "1";
+        camera.position.z = 0;
+        camera.position.y = 1;
     }
     else if (str === "w")
     {
-        camera.position.z -= "1.0";
+        camera.position.z -= 1.0;
     }
     else if (str === "s")
     {
-        camera.position.z += "1.0";
+        camera.position.z += 1.0;
     }
     else if (str == "e")
     {
-        camera.position.y += "1.0";
+        camera.position.y += 1.0;
     }
     else if (str == "q")
     {
-        camera.position.y -= "1.0";
+        camera.position.y -= 1.0;
     }
 }
 
