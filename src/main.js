@@ -1,16 +1,23 @@
 var scene, camera, renderer;
 var mesh, geometry, material;
+var div;
 var ready;
 var jsonLoader;
 var fov = 45;
 var fov_r = fov * 3.14 / 180;
 
-function loadMesh(path)
+function loadMesh(pk)
 {
-    var url = path + "mesh.js";
-    jsonLoader.load(url, onMeshLoaded);
+    init();
 
-    logger.info("Loading mesh at '" + url + "'...");
+    $.ajax({url: '/shady/scenes/get/' + pk + '/',
+        async: false})
+        .done(function(result) {
+            var scene = $.parseJSON(result);
+            var url = scene[0].fields["url"] + "/mesh.js";
+            jsonLoader.load(url, onMeshLoaded);
+            logger.info("Loading mesh at '" + url + "'...");
+        });
 }
 
 function onKeyPress(ev)
@@ -20,8 +27,7 @@ function onKeyPress(ev)
 
     if (str === "z")
     {   
-        camera.position.z = 0;
-        camera.position.y = 1;
+        zoomOut();
     }
     else if (str === "w")
     {
@@ -73,6 +79,9 @@ function onMeshLoaded(geometry, materials)
 
     scene.add(mesh);
 
+    div.append(renderer.domElement);
+    animate();
+
     logger.info('Mesh loaded.');
 }
 
@@ -88,26 +97,22 @@ function zoomOut()
 function main()
 {
     include("lib/three.js");
-    init();
+
+    div = $('#experiment-block-content')
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize( div.width(), div.height() );
+
     $(window).keypress(onKeyPress);
-    animate();
 }
 
 function init()
 {
-    scene = new THREE.Scene();
-
-    var div = $('#experiment-block-content')
-    var width = div.width()
-    var height = div.height()
-    
-    camera = new THREE.PerspectiveCamera( fov, width / height, 1, 5000 );
-
-    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera( fov, div.width() / div.height(), 1, 5000 );
 
     jsonLoader = new THREE.JSONLoader();
     mesh = null;
-    loadMesh(MESH_PATH);
+
+    scene = new THREE.Scene();
 
     var ambient = new THREE.AmbientLight(0xAAAAAA);
     scene.add(ambient);
@@ -115,11 +120,6 @@ function init()
     var point = new THREE.PointLight(0xA0A0A0);
     point.position.set(0, 0, 0);
     scene.add(point);
-
-    renderer = new THREE.WebGLRenderer();
-    renderer.setSize( width, height );
-
-    div.append(renderer.domElement);
 }
 
 function animate()
