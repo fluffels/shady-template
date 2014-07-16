@@ -17,6 +17,11 @@ function loadMesh(pk)
             var url = scene[0].fields["url"] + "/mesh.js";
             jsonLoader.load(url, onMeshLoaded);
             logger.info("Loading mesh at '" + url + "'...");
+
+            var coords = scene[0].fields["camera_start"].split(",");
+            camera.position.x = parseFloat(coords[0]);
+            camera.position.y = parseFloat(coords[1]);
+            camera.position.z = parseFloat(coords[2]);
         });
 }
 
