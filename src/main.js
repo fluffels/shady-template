@@ -1,3 +1,4 @@
+var sceneMetadata;
 var scene, camera, renderer;
 var mesh, geometry, material;
 var div;
@@ -5,6 +6,41 @@ var ready;
 var jsonLoader;
 var fov = 45;
 var fov_r = fov * 3.14 / 180;
+var viewMatrix;
+var keyMap;
+
+var MOVEMENT_PER_FRAME = 0.1;
+var ROTATION_PER_FRAME = 0.01;
+
+function resetCamera()
+{
+    var eye = sceneMetadata[0].fields.eye.split(",");
+    var eyeVec = new THREE.Vector3(
+        parseFloat(eye[0]),
+        parseFloat(eye[1]),
+        parseFloat(eye[2])
+    );
+    camera.position = eyeVec;
+
+    var up = sceneMetadata[0].fields.up.split(",");
+    var upVec = new THREE.Vector3(
+        parseFloat(up[0]),
+        parseFloat(up[1]),
+        parseFloat(up[2])
+    );
+
+    var at = sceneMetadata[0].fields.at.split(",");
+    var atVec = new THREE.Vector3(
+        parseFloat(at[0]),
+        parseFloat(at[1]),
+        parseFloat(at[2])
+    );
+
+    viewMatrix = new THREE.Matrix4();
+    viewMatrix = viewMatrix.lookAt(eyeVec, atVec, upVec);
+
+    camera.quaternion.setFromRotationMatrix(viewMatrix);
+}
 
 function loadMesh(pk)
 {
@@ -13,68 +49,75 @@ function loadMesh(pk)
     $.ajax({url: '/shady/scenes/get/' + pk + '/',
         async: false})
         .done(function(result) {
-            var scene = $.parseJSON(result);
+            sceneMetadata = $.parseJSON(result);
+            resetCamera();
 
-            var url = scene[0].fields["url"] + "/mesh.js";
+            var url = sceneMetadata[0].fields["url"] + "/mesh.js";
             jsonLoader.load(url, onMeshLoaded);
             logger.info("Loading mesh at '" + url + "'...");
-
-            var eye = scene[0].fields.eye.split(",");
-            camera.position.x = parseFloat(eye[0]);
-            camera.position.y = parseFloat(eye[1]);
-            camera.position.z = parseFloat(eye[2]);
-
-            var up = scene[0].fields.up.split(",");
-            camera.up.x = parseFloat(up[0]);
-            camera.up.y = parseFloat(up[1]);
-            camera.up.z = parseFloat(up[2]);
-
-            var at = scene[0].fields.at.split(",");
-            var at_vec = new THREE.Vector3(
-                parseFloat(at[0]),
-                parseFloat(at[1]),
-                parseFloat(at[2])
-            );
-            camera.lookAt(at_vec);
         });
 }
 
-function onKeyPress(ev)
+function onKeyUp(ev)
 {
-    var str = String.fromCharCode(ev.charCode);
-    console.log(str);
+    keyMap[ev.keyCode] = false;
+}
 
-    if (str === "z")
+function onKeyDown(ev)
+{
+    keyMap[ev.keyCode] = true;
+}
+
+function handleKeys()
+{
+    /* 'z' is pressed */
+    if (keyMap[90])
     {   
-        zoomOut();
+        resetCamera();
     }
-    else if (str === "w")
+    /* 'w' is pressed */
+    if (keyMap[87])
     {
-        camera.position.z -= 1.0;
+        translate = new THREE.Vector3(0, 0, -MOVEMENT_PER_FRAME);
+        translate.applyMatrix4(viewMatrix);
+        camera.position.add(translate);
     }
-    else if (str === "s")
+    /* 's' is pressed */
+    if (keyMap[83])
     {
-        camera.position.z += 1.0;
+        translate = new THREE.Vector3(0, 0, MOVEMENT_PER_FRAME);
+        translate.applyMatrix4(viewMatrix);
+        camera.position.add(translate);
     }
-    else if (str == "a")
+    /* 'a' is pressed */
+    if (keyMap[65])
     {
-        mesh.rotation.y -= 0.1; 
+        rotate = new THREE.Matrix4();
+        rotate.makeRotationY(ROTATION_PER_FRAME);
+        viewMatrix.multiply(rotate);
+        camera.quaternion.setFromRotationMatrix(viewMatrix);
     }
-    else if (str == "d")
+    /* 'd' is pressed */
+    if (keyMap[68])
     {
-        mesh.rotation.y += 0.1;
+        rotate = new THREE.Matrix4();
+        rotate.makeRotationY(-ROTATION_PER_FRAME);
+        viewMatrix.multiply(rotate);
+        camera.quaternion.setFromRotationMatrix(viewMatrix);
     }
-    else if (str == "e")
+    /* 'e' is pressed */
+    if (keyMap[69])
     {
-        camera.position.y += 1.0;
+        translate = new THREE.Vector3(0, MOVEMENT_PER_FRAME, 0);
+        translate.applyMatrix4(viewMatrix);
+        camera.position.add(translate);
     }
-    else if (str == "c")
+    /* 'q' is pressed */
+    if (keyMap[81])
     {
-        zoomOut();
-    }
-    else if (str == "q")
-    {
-        camera.position.y -= 1.0;
+        translate = new THREE.Vector3(0, -MOVEMENT_PER_FRAME, 0);
+        translate.applyMatrix4(viewMatrix);
+        camera.position.add(translate);
     }
 }
 
@@ -99,18 +142,9 @@ function onMeshLoaded(geometry, materials)
     scene.add(mesh);
 
     div.append(renderer.domElement);
-    animate();
+    gameLoop();
 
     logger.info('Mesh loaded.');
-}
-
-function zoomOut()
-{
-    mesh.geometry.computeBoundingBox();
-    camera.position.z = 1
-        + mesh.geometry.boundingBox.max.z
-        + mesh.geometry.boundingBox.max.y
-        / Math.tan(fov_r / 2);
 }
 
 function main()
@@ -121,11 +155,14 @@ function main()
     renderer = new THREE.WebGLRenderer();
     renderer.setSize( div.width(), div.height() );
 
-    $(window).keypress(onKeyPress);
+    $(window).keydown(onKeyDown);
+    $(window).keyup(onKeyUp);
 }
 
 function init()
 {
+    keyMap = [];
+
     camera = new THREE.PerspectiveCamera( fov, div.width() / div.height(), 1, 5000 );
 
     jsonLoader = new THREE.JSONLoader();
@@ -141,9 +178,11 @@ function init()
     scene.add(point);
 }
 
-function animate()
+function gameLoop()
 {
-    requestAnimationFrame( animate );
+    requestAnimationFrame(gameLoop);
+
+    handleKeys();
 
     if (mesh !== null)
     {
