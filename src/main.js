@@ -72,6 +72,12 @@ function onKeyUp(ev)
 
 function onKeyDown(ev)
 {
+    /* 'f' is pressed */
+    if (ev.keyCode === 70)
+    {   
+        goFullScreen();
+    }
+
     keyMap[ev.keyCode] = true;
 }
 
@@ -212,6 +218,19 @@ function onMeshLoaded(geometry, materials)
     gameLoop();
 
     logger.info('Mesh loaded.');
+}
+
+function goFullScreen()
+{
+    console.debug("Going fullscreen...");
+    renderer.domElement.requestFullScreen =
+        renderer.domElement.requestFullScreen ||
+        renderer.domElement.msRequestFullScreen ||
+        renderer.domElement.mozRequestFullScreen ||
+        /* No, that's not a typo. Webkit's Requestfullscreen works for letter
+        keys, RequestFullScreen doesn't. */
+        renderer.domElement.webkitRequestFullscreen;
+    renderer.domElement.requestFullScreen();
 }
 
 function main()

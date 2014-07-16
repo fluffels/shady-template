@@ -12,8 +12,8 @@ body
 
 canvas
 {
-    border: 2px dotted blue;
     width: 100%;
+    height: 100%;
 }
 
 div#experiment-block-content
@@ -22,3 +22,8 @@ div#experiment-block-content
     width: 100%;
 }
 
+:-webkit-full-screen
+{
+    width: 100%;
+    height: 100%;
+}
