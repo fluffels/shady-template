@@ -12,6 +12,13 @@ var keyMap;
 var MOVEMENT_PER_FRAME = 0.1;
 var ROTATION_PER_FRAME = 0.01;
 
+/* Amount of radians to rotate when the mouse is moved from one extreme along
+an axis to the other. */
+var MOUSE_SENSITIVITY = 3.14;
+
+var lastPageX = 0;
+var lastPageY = 0;
+
 function resetCamera()
 {
     var eye = sceneMetadata[0].fields.eye.split(",");
@@ -92,33 +99,68 @@ function handleKeys()
     /* 'a' is pressed */
     if (keyMap[65])
     {
-        rotate = new THREE.Matrix4();
-        rotate.makeRotationY(ROTATION_PER_FRAME);
-        viewMatrix.multiply(rotate);
-        camera.quaternion.setFromRotationMatrix(viewMatrix);
+        translate = new THREE.Vector3(-MOVEMENT_PER_FRAME, 0, 0);
+        translate.applyMatrix4(viewMatrix);
+        camera.position.add(translate);
     }
     /* 'd' is pressed */
     if (keyMap[68])
     {
-        rotate = new THREE.Matrix4();
-        rotate.makeRotationY(-ROTATION_PER_FRAME);
-        viewMatrix.multiply(rotate);
-        camera.quaternion.setFromRotationMatrix(viewMatrix);
+        translate = new THREE.Vector3(MOVEMENT_PER_FRAME, 0, 0);
+        translate.applyMatrix4(viewMatrix);
+        camera.position.add(translate);
     }
     /* 'e' is pressed */
     if (keyMap[69])
     {
-        translate = new THREE.Vector3(0, MOVEMENT_PER_FRAME, 0);
-        translate.applyMatrix4(viewMatrix);
-        camera.position.add(translate);
+        rotate = new THREE.Matrix4();
+        rotate.makeRotationZ(-ROTATION_PER_FRAME);
+        viewMatrix.multiply(rotate);
+        camera.quaternion.setFromRotationMatrix(viewMatrix);
     }
     /* 'q' is pressed */
     if (keyMap[81])
     {
-        translate = new THREE.Vector3(0, -MOVEMENT_PER_FRAME, 0);
-        translate.applyMatrix4(viewMatrix);
-        camera.position.add(translate);
+        rotate = new THREE.Matrix4();
+        rotate.makeRotationZ(ROTATION_PER_FRAME);
+        viewMatrix.multiply(rotate);
+        camera.quaternion.setFromRotationMatrix(viewMatrix);
     }
+}
+
+function onMouseDown(ev)
+{
+    div.mousemove(onMouseMove);
+    lastPageX = ev.pageX;
+    lastPageY = ev.pageY;
+}
+
+function onMouseUp(ev)
+{
+    div.off("mousemove");
+}
+
+function onMouseMove(ev)
+{
+    var xDelta = (ev.pageX - lastPageX) / div.width();
+    var yDelta = (ev.pageY - lastPageY) / div.height();
+
+    lastPageX = ev.pageX;
+    lastPageY = ev.pageY;
+
+    var xRotation = xDelta * MOUSE_SENSITIVITY;
+    var yRotation = yDelta * MOUSE_SENSITIVITY;
+
+    xRotate = new THREE.Matrix4();
+    xRotate.makeRotationY(-xRotation);
+
+    yRotate = new THREE.Matrix4();
+    yRotate.makeRotationX(-yRotation);
+
+    viewMatrix.multiply(xRotate);
+    viewMatrix.multiply(yRotate);
+
+    camera.quaternion.setFromRotationMatrix(viewMatrix);
 }
 
 function onMeshLoaded(geometry, materials)
@@ -157,6 +199,10 @@ function main()
 
     $(window).keydown(onKeyDown);
     $(window).keyup(onKeyUp);
+    div.mousedown(onMouseDown);
+    /* This is bound to the body, since if the mouse moves off the div, then it
+    won't receive the event. */
+    $(body).mouseup(onMouseUp);
 }
 
 function init()
