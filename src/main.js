@@ -14,14 +14,28 @@ function loadMesh(pk)
         async: false})
         .done(function(result) {
             var scene = $.parseJSON(result);
+
             var url = scene[0].fields["url"] + "/mesh.js";
             jsonLoader.load(url, onMeshLoaded);
             logger.info("Loading mesh at '" + url + "'...");
 
-            var coords = scene[0].fields["camera_start"].split(",");
-            camera.position.x = parseFloat(coords[0]);
-            camera.position.y = parseFloat(coords[1]);
-            camera.position.z = parseFloat(coords[2]);
+            var eye = scene[0].fields.eye.split(",");
+            camera.position.x = parseFloat(eye[0]);
+            camera.position.y = parseFloat(eye[1]);
+            camera.position.z = parseFloat(eye[2]);
+
+            var up = scene[0].fields.up.split(",");
+            camera.up.x = parseFloat(up[0]);
+            camera.up.y = parseFloat(up[1]);
+            camera.up.z = parseFloat(up[2]);
+
+            var at = scene[0].fields.at.split(",");
+            var at_vec = new THREE.Vector3(
+                parseFloat(at[0]),
+                parseFloat(at[1]),
+                parseFloat(at[2])
+            );
+            camera.lookAt(at_vec);
         });
 }
 
