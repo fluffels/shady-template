@@ -128,25 +128,50 @@ function handleKeys()
     }
 }
 
-function onMouseDown(ev)
+function onPointerLockChange()
 {
-    div.mousemove(onMouseMove);
-    lastPageX = ev.pageX;
-    lastPageY = ev.pageY;
+    var pointerLockElement =
+        document.pointerLockElement
+        || document.mozPointerLockElement 
+        || document.webkitPointerLockElement;
+    if (pointerLockElement === renderer.domElement)
+    {
+        lastPageX = 0;
+        lastPageY = 0;
+        renderer.domElement.onmousemove = onMouseMove;
+    }
+    else
+    {
+        renderer.domElement.onmousemove = null;
+    }
 }
 
-function onMouseUp(ev)
+function onMouseDown(ev)
 {
-    div.off("mousemove");
+    /* When I wrote this code, jQuery did not support this new functionality.
+    Thus the ugly platform-specific code below. */
+    document.addEventListener("pointerlockchange", onPointerLockChange, false);
+    document.addEventListener("mozpointerlockchange", onPointerLockChange, false);
+    document.addEventListener("webkitpointerlockchange", onPointerLockChange, false);
+
+    renderer.domElement.requestPointerLock =
+        renderer.domElement.requestPointerLock
+        || renderer.domElement.mozRequestPointerLock
+        || renderer.domElement.webkitRequestPointerLock;
+
+    renderer.domElement.requestPointerLock();
 }
 
 function onMouseMove(ev)
 {
-    var xDelta = (ev.pageX - lastPageX) / div.width();
-    var yDelta = (ev.pageY - lastPageY) / div.height();
+    var xMove = ev.movementX || ev.mozMovementX || ev.webkitMovementX;
+    var yMove = ev.movementY || ev.mozMovementY || ev.webkitMovementY;
 
-    lastPageX = ev.pageX;
-    lastPageY = ev.pageY;
+    var xDelta = xMove / div.width();
+    var yDelta = yMove / div.height();
+
+    lastPageX = ev.movementX;
+    lastPageY = ev.movementY;
 
     var xRotation = xDelta * MOUSE_SENSITIVITY;
     var yRotation = yDelta * MOUSE_SENSITIVITY;
@@ -200,9 +225,6 @@ function main()
     $(window).keydown(onKeyDown);
     $(window).keyup(onKeyUp);
     div.mousedown(onMouseDown);
-    /* This is bound to the body, since if the mouse moves off the div, then it
-    won't receive the event. */
-    $(body).mouseup(onMouseUp);
 }
 
 function init()
