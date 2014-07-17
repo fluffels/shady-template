@@ -223,14 +223,20 @@ function onMeshLoaded(geometry, materials)
 function goFullScreen()
 {
     console.debug("Going fullscreen...");
-    renderer.domElement.requestFullScreen =
-        renderer.domElement.requestFullScreen ||
-        renderer.domElement.msRequestFullScreen ||
-        renderer.domElement.mozRequestFullScreen ||
+    var div = document.getElementById("experiment-block-content");
+    div.requestFullScreen =
+        div.requestFullScreen ||
+        div.msRequestFullScreen ||
+        div.mozRequestFullScreen ||
         /* No, that's not a typo. Webkit's Requestfullscreen works for letter
-        keys, RequestFullScreen doesn't. */
-        renderer.domElement.webkitRequestFullscreen;
-    renderer.domElement.requestFullScreen();
+        keys, RequestFulLScreen doesn't. */
+        div.webkitRequestFullscreen;
+    div.requestFullScreen();
+}
+
+function onResize()
+{
+    renderer.setSize( div.width(), div.height() );
 }
 
 function main()
@@ -239,7 +245,6 @@ function main()
 
     div = $('#experiment-block-content')
     renderer = new THREE.WebGLRenderer();
-    renderer.setSize( div.width(), div.height() );
 
     $(window).keydown(onKeyDown);
     $(window).keyup(onKeyUp);
@@ -270,6 +275,9 @@ function gameLoop()
     requestAnimationFrame(gameLoop);
 
     handleKeys();
+
+    var canvas = renderer.domElement;
+    onResize();
 
     if (mesh !== null)
     {
