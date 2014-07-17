@@ -6,7 +6,6 @@ var ready;
 var jsonLoader;
 var fov = 45;
 var fov_r = fov * 3.14 / 180;
-var viewMatrix;
 var keyMap;
 
 var MOVEMENT_PER_FRAME = 0.1;
@@ -43,10 +42,10 @@ function resetCamera()
         parseFloat(at[2])
     );
 
-    viewMatrix = new THREE.Matrix4();
-    viewMatrix = viewMatrix.lookAt(eyeVec, atVec, upVec);
+    var lookAt = new THREE.Matrix4();
+    lookAt = lookAt.lookAt(eyeVec, atVec, upVec);
 
-    camera.quaternion.setFromRotationMatrix(viewMatrix);
+    camera.quaternion.setFromRotationMatrix(lookAt);
 }
 
 function loadMesh(pk)
@@ -91,46 +90,46 @@ function handleKeys()
     /* 'w' is pressed */
     if (keyMap[87])
     {
-        translate = new THREE.Vector3(0, 0, -MOVEMENT_PER_FRAME);
-        translate.applyMatrix4(viewMatrix);
+        var translate = new THREE.Vector3(0, 0, -MOVEMENT_PER_FRAME);
+        camera.quaternion.multiplyVector3(translate);
         camera.position.add(translate);
     }
     /* 's' is pressed */
     if (keyMap[83])
     {
-        translate = new THREE.Vector3(0, 0, MOVEMENT_PER_FRAME);
-        translate.applyMatrix4(viewMatrix);
+        var translate = new THREE.Vector3(0, 0, MOVEMENT_PER_FRAME);
+        camera.quaternion.multiplyVector3(translate);
         camera.position.add(translate);
     }
     /* 'a' is pressed */
     if (keyMap[65])
     {
-        translate = new THREE.Vector3(-MOVEMENT_PER_FRAME, 0, 0);
-        translate.applyMatrix4(viewMatrix);
+        var translate = new THREE.Vector3(-MOVEMENT_PER_FRAME, 0, 0);
+        camera.quaternion.multiplyVector3(translate);
         camera.position.add(translate);
     }
     /* 'd' is pressed */
     if (keyMap[68])
     {
-        translate = new THREE.Vector3(MOVEMENT_PER_FRAME, 0, 0);
-        translate.applyMatrix4(viewMatrix);
+        var translate = new THREE.Vector3(MOVEMENT_PER_FRAME, 0, 0);
+        camera.quaternion.multiplyVector3(translate);
         camera.position.add(translate);
     }
     /* 'e' is pressed */
     if (keyMap[69])
     {
-        rotate = new THREE.Matrix4();
-        rotate.makeRotationZ(-ROTATION_PER_FRAME);
-        viewMatrix.multiply(rotate);
-        camera.quaternion.setFromRotationMatrix(viewMatrix);
+        var rotate = new THREE.Quaternion();
+        var zAxis = new THREE.Vector3(0, 0, 1);
+        rotate.setFromAxisAngle(zAxis, -ROTATION_PER_FRAME);
+        camera.quaternion.multiply(rotate);
     }
     /* 'q' is pressed */
     if (keyMap[81])
     {
-        rotate = new THREE.Matrix4();
-        rotate.makeRotationZ(ROTATION_PER_FRAME);
-        viewMatrix.multiply(rotate);
-        camera.quaternion.setFromRotationMatrix(viewMatrix);
+        var rotate = new THREE.Quaternion();
+        var zAxis = new THREE.Vector3(0, 0, 1);
+        rotate.setFromAxisAngle(zAxis, ROTATION_PER_FRAME);
+        camera.quaternion.multiply(rotate);
     }
 }
 
@@ -182,16 +181,15 @@ function onMouseMove(ev)
     var xRotation = xDelta * MOUSE_SENSITIVITY;
     var yRotation = yDelta * MOUSE_SENSITIVITY;
 
-    xRotate = new THREE.Matrix4();
-    xRotate.makeRotationY(-xRotation);
+    xRotate = new THREE.Quaternion();
+    xRotate.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -xRotation);
 
-    yRotate = new THREE.Matrix4();
-    yRotate.makeRotationX(-yRotation);
+    yRotate = new THREE.Quaternion();
+    yRotate.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -yRotation);
 
-    viewMatrix.multiply(xRotate);
-    viewMatrix.multiply(yRotate);
-
-    camera.quaternion.setFromRotationMatrix(viewMatrix);
+    camera.quaternion.multiply(xRotate);
+    camera.quaternion.multiply(yRotate);
+    camera.quaternion.normalize();
 }
 
 function onMeshLoaded(geometry, materials)
