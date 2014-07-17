@@ -119,28 +119,28 @@ function handleKeys()
     if (keyMap[87])
     {
         var translate = new THREE.Vector3(0, 0, -MOVEMENT_PER_FRAME);
-        camera.quaternion.multiplyVector3(translate);
+        translate.applyQuaternion(camera.quaternion);
         camera.position.add(translate);
     }
     /* 's' is pressed */
     if (keyMap[83])
     {
         var translate = new THREE.Vector3(0, 0, MOVEMENT_PER_FRAME);
-        camera.quaternion.multiplyVector3(translate);
+        translate.applyQuaternion(camera.quaternion);
         camera.position.add(translate);
     }
     /* 'a' is pressed */
     if (keyMap[65])
     {
         var translate = new THREE.Vector3(-MOVEMENT_PER_FRAME, 0, 0);
-        camera.quaternion.multiplyVector3(translate);
+        translate.applyQuaternion(camera.quaternion);
         camera.position.add(translate);
     }
     /* 'd' is pressed */
     if (keyMap[68])
     {
         var translate = new THREE.Vector3(MOVEMENT_PER_FRAME, 0, 0);
-        camera.quaternion.multiplyVector3(translate);
+        translate.applyQuaternion(camera.quaternion);
         camera.position.add(translate);
     }
     /* 'e' is pressed */
