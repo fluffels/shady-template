@@ -1,11 +1,13 @@
+var FOV = 45;
+var NEAR = 1;
+var FAR = 5000;
+
 var sceneMetadata;
-var scene, camera, renderer;
+var scene, renderer;
 var mesh, geometry, material;
 var div;
 var ready;
 var jsonLoader;
-var fov = 45;
-var fov_r = fov * 3.14 / 180;
 var keyMap;
 
 var MOVEMENT_PER_FRAME = 0.1;
@@ -213,6 +215,7 @@ function onMeshLoaded(geometry, materials)
     scene.add(mesh);
 
     div.append(renderer.domElement);
+    onResize();
     gameLoop();
 
     logger.info('Mesh loaded.');
@@ -251,7 +254,10 @@ function toggleFullScreen()
 
 function onResize()
 {
-    renderer.setSize( div.width(), div.height() );
+    renderer.setSize(div.width(), div.height());
+
+    camera.aspect = div.width() / div.height();
+    camera.updateProjectionMatrix();
 }
 
 function main()
@@ -263,6 +269,7 @@ function main()
 
     $(window).keydown(onKeyDown);
     $(window).keyup(onKeyUp);
+    $(window).resize(onResize);
     div.mousedown(onMouseDown);
 }
 
@@ -270,7 +277,7 @@ function init()
 {
     keyMap = [];
 
-    camera = new THREE.PerspectiveCamera( fov, div.width() / div.height(), 1, 5000 );
+    camera = new THREE.PerspectiveCamera(FOV, 1, NEAR, FAR);
 
     jsonLoader = new THREE.JSONLoader();
     mesh = null;
@@ -290,9 +297,6 @@ function gameLoop()
     requestAnimationFrame(gameLoop);
 
     handleKeys();
-
-    var canvas = renderer.domElement;
-    onResize();
 
     if (mesh !== null)
     {
