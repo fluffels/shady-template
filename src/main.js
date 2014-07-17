@@ -22,7 +22,7 @@ var lastPageY = 0;
 
 function resetCamera()
 {
-    var eye = sceneMetadata[0].fields.eye.split(",");
+    var eye = sceneMetadata.fields.eye.split(",");
     var eyeVec = new THREE.Vector3(
         parseFloat(eye[0]),
         parseFloat(eye[1]),
@@ -30,14 +30,14 @@ function resetCamera()
     );
     camera.position = eyeVec;
 
-    var up = sceneMetadata[0].fields.up.split(",");
+    var up = sceneMetadata.fields.up.split(",");
     var upVec = new THREE.Vector3(
         parseFloat(up[0]),
         parseFloat(up[1]),
         parseFloat(up[2])
     );
 
-    var at = sceneMetadata[0].fields.at.split(",");
+    var at = sceneMetadata.fields.at.split(",");
     var atVec = new THREE.Vector3(
         parseFloat(at[0]),
         parseFloat(at[1]),
@@ -52,15 +52,15 @@ function resetCamera()
 
 function loadMesh(pk)
 {
-    init();
+    reset();
 
     $.ajax({url: '/shady/scenes/get/' + pk + '/',
         async: false})
         .done(function(result) {
-            sceneMetadata = $.parseJSON(result);
+            sceneMetadata = $.parseJSON(result)[0];
             resetCamera();
 
-            var url = sceneMetadata[0].fields["url"] + "/mesh.js";
+            var url = sceneMetadata.fields["url"] + "/mesh.js";
             jsonLoader.load(url, onMeshLoaded);
             logger.info("Loading mesh at '" + url + "'...");
         });
@@ -78,8 +78,34 @@ function onKeyDown(ev)
     {   
         toggleFullScreen();
     }
+    /* 'x' is pressed */
+    if (ev.keyCode === 88)
+    {
+        recordFrame();
+    }
 
     keyMap[ev.keyCode] = true;
+}
+
+function recordFrame()
+{
+    var frame = "keyframe=" +
+        JSON.stringify([{
+            "model": "shady.keyframe",
+            "fields": {
+                "scene": sceneMetadata.pk,
+                "position": camera.position,
+                "rotation": camera.quaternion
+            }
+        }]);
+
+    $.ajax("/shady/keyframes/add/", {
+        data: frame,
+        type: "POST",
+        error: function() {
+            logger.error("Could not send keyframe.");
+        }
+    });
 }
 
 function handleKeys()
@@ -271,9 +297,19 @@ function main()
     $(window).keyup(onKeyUp);
     $(window).resize(onResize);
     div.mousedown(onMouseDown);
+
+    var csrftoken = $.cookie('csrftoken');
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (!/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type)
+                && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+        }
+    });
 }
 
-function init()
+function reset()
 {
     keyMap = [];
 
