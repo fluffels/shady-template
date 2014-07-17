@@ -20,6 +20,11 @@ var MOUSE_SENSITIVITY = 3.14;
 var lastPageX = 0;
 var lastPageY = 0;
 
+var is_animation_running;
+var prev_key_frame;
+var prev_position;
+var next_position;
+
 function resetCamera()
 {
     var eye = sceneMetadata.fields.eye.split(",");
@@ -71,6 +76,47 @@ function onKeyUp(ev)
     keyMap[ev.keyCode] = false;
 }
 
+function startAnimation(keyFrames)
+{
+    keyFrames = $.parseJSON(keyFrames);
+
+    position = $.parseJSON(keyFrames[0].fields.position);
+    camera.position.x = position.x;
+    camera.position.y = position.y;
+    camera.position.z = position.z;
+
+    rotation = $.parseJSON(keyFrames[0].fields.rotation);
+    camera.quaternion._x = rotation._x;
+    camera.quaternion._y = rotation._y;
+    camera.quaternion._z = rotation._z;
+
+    prev_position = camera.position;
+    next_position = $.parseJSON(keyFrames[1].fields.position);
+    next_position = new THREE.Vector3(next_position.x, next_position.y,
+        next_position.z);
+
+    is_animation_running = true;
+    prev_key_frame = new Date().getTime();
+}
+
+function animate()
+{
+    var now = new Date().getTime();
+
+    var delta = (now - prev_key_frame) / 1000;
+
+    var direction = new THREE.Vector3();
+    direction.subVectors(next_position, prev_position);
+    direction.multiplyScalar(delta);
+
+    camera.position.add(direction);
+
+    if (delta >= 1.0)
+    {
+        is_animation_running = false;
+    }
+}
+
 function onKeyDown(ev)
 {
     /* 'f' is pressed */
@@ -83,21 +129,27 @@ function onKeyDown(ev)
     {
         recordFrame();
     }
+    /* 't' is pressed */
+    if (ev.keyCode == 84)
+    {
+        $.ajax("/shady/keyframes/get/" + sceneMetadata.pk + "/", {
+            error: function() {
+                logger.error("Could not retrieve keyframes.");
+            },
+            success: function(data) {
+                startAnimation(data);
+            }
+        });
+    }
 
     keyMap[ev.keyCode] = true;
 }
 
 function recordFrame()
 {
-    var frame = "keyframe=" +
-        JSON.stringify([{
-            "model": "shady.keyframe",
-            "fields": {
-                "scene": sceneMetadata.pk,
-                "position": camera.position,
-                "rotation": camera.quaternion
-            }
-        }]);
+    var frame = "scene_id=" + sceneMetadata.pk
+        + "&position=" + JSON.stringify(camera.position)
+        + "&rotation=" + JSON.stringify(camera.quaternion);
 
     $.ajax("/shady/keyframes/add/", {
         data: frame,
@@ -311,6 +363,7 @@ function main()
 
 function reset()
 {
+    is_animation_running = false;
     keyMap = [];
 
     camera = new THREE.PerspectiveCamera(FOV, 1, NEAR, FAR);
@@ -330,13 +383,18 @@ function reset()
 
 function gameLoop()
 {
-    requestAnimationFrame(gameLoop);
-
     handleKeys();
+
+    if (is_animation_running)
+    {
+        animate();
+    }
 
     if (mesh !== null)
     {
         renderer.render( scene, camera );
     }
+
+    requestAnimationFrame(gameLoop);
 }
 
