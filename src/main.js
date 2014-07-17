@@ -74,7 +74,7 @@ function onKeyDown(ev)
     /* 'f' is pressed */
     if (ev.keyCode === 70)
     {   
-        goFullScreen();
+        toggleFullScreen();
     }
 
     keyMap[ev.keyCode] = true;
@@ -218,18 +218,35 @@ function onMeshLoaded(geometry, materials)
     logger.info('Mesh loaded.');
 }
 
-function goFullScreen()
+function toggleFullScreen()
 {
-    console.debug("Going fullscreen...");
-    var div = document.getElementById("experiment-block-content");
-    div.requestFullScreen =
-        div.requestFullScreen ||
-        div.msRequestFullScreen ||
-        div.mozRequestFullScreen ||
-        /* No, that's not a typo. Webkit's Requestfullscreen works for letter
-        keys, RequestFulLScreen doesn't. */
-        div.webkitRequestFullscreen;
-    div.requestFullScreen();
+    if (document.fullScreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullScreenElement ||
+        /* Yep, webkit's one is all lower case. */
+        document.webkitFullscreenElement)
+    {
+        document.exitFullScreen = 
+            document.exitFullScreen ||
+            document.mozExitFullScreen ||
+            document.msExitFullScreen ||
+            /* Yep, webkit's one is all lower case. */
+            document.webkitExitFullscreen;
+        document.exitFullScreen();
+    }
+    else
+    {
+        var div = document.getElementById("experiment-block-content");
+
+        div.requestFullScreen =
+            div.requestFullScreen ||
+            div.mozRequestFullScreen ||
+            div.msRequestFullScreen ||
+            /* No, that's not a typo. Webkit's Requestfullscreen works for
+            letter keys, RequestFulLScreen doesn't. */
+            div.webkitRequestFullscreen;
+        div.requestFullScreen();
+    }
 }
 
 function onResize()
