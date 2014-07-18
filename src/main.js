@@ -24,6 +24,8 @@ var is_animation_running;
 var prev_key_frame;
 var prev_position;
 var next_position;
+var prev_rotation;
+var next_rotation;
 
 function resetCamera()
 {
@@ -95,6 +97,11 @@ function startAnimation(keyFrames)
     next_position = new THREE.Vector3(next_position.x, next_position.y,
         next_position.z);
 
+    prev_rotation = camera.quaternion;
+    next_rotation = $.parseJSON(keyFrames[1].fields.rotation);
+    next_rotation = new THREE.Quaternion(next_rotation._x, next_rotation._y,
+        next_rotation._z, next_rotation._w);
+
     is_animation_running = true;
     prev_key_frame = new Date().getTime();
 }
@@ -103,13 +110,16 @@ function animate()
 {
     var now = new Date().getTime();
 
-    var delta = (now - prev_key_frame) / 1000;
+    var delta = (now - prev_key_frame) / 5000;
 
     var direction = new THREE.Vector3();
     direction.subVectors(next_position, prev_position);
     direction.multiplyScalar(delta);
-
     camera.position.add(direction);
+
+    var rotation = prev_rotation.clone();
+    rotation.slerp(next_rotation, delta);
+    camera.quaternion.copy(rotation);
 
     if (delta >= 1.0)
     {
