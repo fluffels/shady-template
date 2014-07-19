@@ -72,7 +72,22 @@ function loadMesh(pk)
             resetCamera();
 
             var url = sceneMetadata.fields["url"] + "/mesh.js";
-            jsonLoader.load(url, onMeshLoaded);
+            jsonLoader.load(url, function(geometry, materials) {
+                onMeshLoaded(geometry, materials, scene);
+            });
+            logger.info("Loading mesh at '" + url + "'...");
+        });
+
+    $.ajax({url: '/shady/scenes/get/' + pk + '/',
+        async: false})
+        .done(function(result) {
+            sceneMetadata = $.parseJSON(result)[0];
+            resetCamera();
+
+            var url = sceneMetadata.fields["url"] + "/mesh.js";
+            jsonLoader.load(url, function(geometry, materials) {
+                onMeshLoaded(geometry, materials, scene2);
+            });
             logger.info("Loading mesh at '" + url + "'...");
         });
 }
@@ -298,7 +313,7 @@ function onMouseMove(ev)
     camera.quaternion.normalize();
 }
 
-function onMeshLoaded(geometry, materials)
+function onMeshLoaded(geometry, materials, scene)
 {
     scene.remove(mesh);
 
@@ -317,15 +332,6 @@ function onMeshLoaded(geometry, materials)
     }
 
     scene.add(mesh);
-
-    var material2 = material.clone();
-    var mesh2 = mesh.clone();
-    scene2.add(mesh.clone());
-
-    div.append(renderer.domElement);
-    
-    var div2 = $("reference-block-content");
-    div2.append(renderer2.domElement);
 
     onResize();
     gameLoop();
@@ -351,7 +357,7 @@ function toggleFullScreen()
     }
     else
     {
-        var div = document.getElementById("experiment-block-content");
+        var div = document.getElementById("display-section");
 
         div.requestFullScreen =
             div.requestFullScreen ||
@@ -366,10 +372,11 @@ function toggleFullScreen()
 
 function onResize()
 {
-    renderer.setSize(div.width(), div.height());
-    renderer2.setSize(div.width(), div.height());
+    var experiment = $("div#experiment-block");
+    renderer.setSize(experiment.width(), experiment.height());
+    renderer2.setSize(experiment.width(), experiment.height());
 
-    camera.aspect = div.width() / div.height();
+    camera.aspect = experiment.width() / experiment.height();
     camera.updateProjectionMatrix();
 }
 
@@ -377,13 +384,13 @@ function main()
 {
     include("lib/three.js");
 
-    div = $('#experiment-block-content')
-
-    var experiment_canvas = document.getElementById("experiment-canvas");
-    renderer = new THREE.WebGLRenderer({canvas: experiment_canvas});
+    div = $('#display-section')
 
     var reference_canvas = document.getElementById("reference-canvas");
-    renderer2 = new THREE.WebGLRenderer({canvas: reference_canvas});
+    renderer = new THREE.WebGLRenderer({canvas: reference_canvas});
+
+    var experiment_canvas = document.getElementById("experiment-canvas");
+    renderer2 = new THREE.WebGLRenderer({canvas: experiment_canvas});
 
     $(window).keydown(onKeyDown);
     $(window).keyup(onKeyUp);
@@ -416,12 +423,13 @@ function reset()
     scene = new THREE.Scene();
     scene2 = new THREE.Scene();
 
-    var ambient = new THREE.AmbientLight(0xAAAAAA);
-    scene.add(ambient);
-
     var point = new THREE.PointLight(0xA0A0A0);
     point.position.set(0, 0, 0);
     scene.add(point);
+
+    var point2 = new THREE.PointLight(0xA0A0A0);
+    point2.position.set(0, 0, 0);
+    scene2.add(point2);
 }
 
 function gameLoop()
