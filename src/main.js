@@ -26,6 +26,8 @@ var prev_position;
 var next_position;
 var prev_rotation;
 var next_rotation;
+var position_queue;
+var rotation_queue;
 
 function resetCamera()
 {
@@ -82,25 +84,24 @@ function startAnimation(keyFrames)
 {
     keyFrames = $.parseJSON(keyFrames);
 
-    position = $.parseJSON(keyFrames[0].fields.position);
-    camera.position.x = position.x;
-    camera.position.y = position.y;
-    camera.position.z = position.z;
+    for (i in keyFrames)
+    {
+        var position = $.parseJSON(keyFrames[i].fields.position);
+        position = new THREE.Vector3(position.x, position.y, position.z);
+        position_queue.push(position);
 
-    rotation = $.parseJSON(keyFrames[0].fields.rotation);
-    camera.quaternion._x = rotation._x;
-    camera.quaternion._y = rotation._y;
-    camera.quaternion._z = rotation._z;
+        var rotation = $.parseJSON(keyFrames[i].fields.rotation);
+        rotation = new THREE.Quaternion(rotation._x, rotation._y, rotation._z, rotation._w);
+        rotation_queue.push(rotation);
+    }
 
-    prev_position = camera.position;
-    next_position = $.parseJSON(keyFrames[1].fields.position);
-    next_position = new THREE.Vector3(next_position.x, next_position.y,
-        next_position.z);
+    camera.position = position_queue.shift().clone();
+    prev_position = camera.position.clone();
 
-    prev_rotation = camera.quaternion;
-    next_rotation = $.parseJSON(keyFrames[1].fields.rotation);
-    next_rotation = new THREE.Quaternion(next_rotation._x, next_rotation._y,
-        next_rotation._z, next_rotation._w);
+    camera.quaternion = prev_rotation = rotation_queue.shift().clone();
+
+    next_position = position_queue.shift().clone();
+    next_rotation = rotation_queue.shift().clone();
 
     is_animation_running = true;
     prev_key_frame = new Date().getTime();
@@ -110,12 +111,12 @@ function animate()
 {
     var now = new Date().getTime();
 
-    var delta = (now - prev_key_frame) / 5000;
+    var delta = (now - prev_key_frame) / 1000;
 
     var direction = new THREE.Vector3();
     direction.subVectors(next_position, prev_position);
     direction.multiplyScalar(delta);
-    camera.position.add(direction);
+    camera.position.addVectors(prev_position, direction);
 
     var rotation = prev_rotation.clone();
     rotation.slerp(next_rotation, delta);
@@ -123,7 +124,20 @@ function animate()
 
     if (delta >= 1.0)
     {
-        is_animation_running = false;
+        if (position_queue.length == 0 || rotation_queue.length == 0)
+        {
+            is_animation_running = false;
+        }
+        else
+        {
+            prev_position = next_position;
+            next_position = position_queue.shift().clone();
+
+            prev_rotation = next_rotation;
+            next_rotation = rotation_queue.shift().clone();
+
+            prev_key_frame = new Date().getTime();
+        }
     }
 }
 
@@ -375,6 +389,8 @@ function reset()
 {
     is_animation_running = false;
     keyMap = [];
+    position_queue = [];
+    rotation_queue = [];
 
     camera = new THREE.PerspectiveCamera(FOV, 1, NEAR, FAR);
 
