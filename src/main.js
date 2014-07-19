@@ -4,6 +4,8 @@ var FAR = 5000;
 
 var sceneMetadata;
 var scene, renderer;
+var renderer2;
+var scene2;
 var mesh, geometry, material;
 var div;
 var ready;
@@ -316,7 +318,15 @@ function onMeshLoaded(geometry, materials)
 
     scene.add(mesh);
 
+    var material2 = material.clone();
+    var mesh2 = mesh.clone();
+    scene2.add(mesh.clone());
+
     div.append(renderer.domElement);
+    
+    var div2 = $("reference-block-content");
+    div2.append(renderer2.domElement);
+
     onResize();
     gameLoop();
 
@@ -357,6 +367,7 @@ function toggleFullScreen()
 function onResize()
 {
     renderer.setSize(div.width(), div.height());
+    renderer2.setSize(div.width(), div.height());
 
     camera.aspect = div.width() / div.height();
     camera.updateProjectionMatrix();
@@ -367,7 +378,12 @@ function main()
     include("lib/three.js");
 
     div = $('#experiment-block-content')
-    renderer = new THREE.WebGLRenderer();
+
+    var experiment_canvas = document.getElementById("experiment-canvas");
+    renderer = new THREE.WebGLRenderer({canvas: experiment_canvas});
+
+    var reference_canvas = document.getElementById("reference-canvas");
+    renderer2 = new THREE.WebGLRenderer({canvas: reference_canvas});
 
     $(window).keydown(onKeyDown);
     $(window).keyup(onKeyUp);
@@ -398,6 +414,7 @@ function reset()
     mesh = null;
 
     scene = new THREE.Scene();
+    scene2 = new THREE.Scene();
 
     var ambient = new THREE.AmbientLight(0xAAAAAA);
     scene.add(ambient);
@@ -419,8 +436,8 @@ function gameLoop()
     if (mesh !== null)
     {
         renderer.render( scene, camera );
+        renderer2.render(scene2, camera);
     }
 
     requestAnimationFrame(gameLoop);
 }
-
