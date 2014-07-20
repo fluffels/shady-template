@@ -15,6 +15,8 @@ var keyMap;
 var MOVEMENT_PER_FRAME = 0.1;
 var ROTATION_PER_FRAME = 0.01;
 
+var frame_counter;
+
 /* Amount of radians to rotate when the mouse is moved from one extreme along
 an axis to the other. */
 var MOUSE_SENSITIVITY = 3.14;
@@ -414,6 +416,7 @@ function reset()
     keyMap = [];
     position_queue = [];
     rotation_queue = [];
+    frame_counter = 0;
 
     camera = new THREE.PerspectiveCamera(FOV, 1, NEAR, FAR);
 
@@ -432,6 +435,26 @@ function reset()
     scene2.add(point2);
 }
 
+function recordError()
+{
+    var reference = $("canvas#reference-canvas");
+    var width = reference.width();
+    var height = reference.height();
+    var ctx = renderer.context;
+    var reference_pixels = new Uint8Array(4 * width * height);
+    ctx.readPixels(0, 0, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, reference_pixels);
+
+    var ctx = renderer2.context;
+    var experiment_pixels = new Uint8Array(4 * width * height);
+    ctx.readPixels(0, 0, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, experiment_pixels);
+
+    sum = 0;
+    for (i in reference_pixels)
+    {
+        sum += experiment_pixels[i] - reference_pixels[i];
+    }
+}
+
 function gameLoop()
 {
     handleKeys();
@@ -446,6 +469,13 @@ function gameLoop()
         renderer.render( scene, camera );
         renderer2.render(scene2, camera);
     }
+
+    if ((frame_counter !== 0) && (frame_counter % 59 === 0))
+    {
+        recordError();
+    }
+
+    frame_counter++;
 
     requestAnimationFrame(gameLoop);
 }
