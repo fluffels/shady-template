@@ -33,6 +33,8 @@ var next_rotation;
 var position_queue;
 var rotation_queue;
 
+var experiment_run_id;
+
 function resetCamera()
 {
     var eye = sceneMetadata.fields.eye.split(",");
@@ -124,6 +126,13 @@ function startAnimation(keyFrames)
 
     is_animation_running = true;
     prev_key_frame = new Date().getTime();
+
+    $.ajax({
+        url: '/shady/experiment_runs/start/3/',
+        async: false})
+        .done(function(result) {
+            experiment_run_id = parseInt(result);
+    });
 }
 
 function animate()
@@ -453,6 +462,17 @@ function recordError()
     {
         sum += experiment_pixels[i] - reference_pixels[i];
     }
+
+    var error = "error=" + sum
+        + "&time=" + 10;
+
+    $.ajax("/shady/experiment_runs/log/" + experiment_run_id + "/", {
+        data: error,
+        type: "POST",
+        error: function() {
+            logger.error("Could not send experiment log.");
+        }
+    });
 }
 
 function gameLoop()
@@ -470,7 +490,7 @@ function gameLoop()
         renderer2.render(scene2, camera);
     }
 
-    if ((frame_counter !== 0) && (frame_counter % 59 === 0))
+    if ((frame_counter !== 0) && (frame_counter % 59 === 0) && is_animation_running)
     {
         recordError();
     }
