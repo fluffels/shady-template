@@ -4,6 +4,8 @@ var FAR = 5000;
 
 var sceneMetadata;
 var scene, renderer;
+var renderer2;
+var scene2;
 var mesh, geometry, material;
 var div;
 var ready;
@@ -13,6 +15,8 @@ var keyMap;
 var MOVEMENT_PER_FRAME = 0.1;
 var ROTATION_PER_FRAME = 0.01;
 
+var frame_counter;
+
 /* Amount of radians to rotate when the mouse is moved from one extreme along
 an axis to the other. */
 var MOUSE_SENSITIVITY = 3.14;
@@ -20,6 +24,7 @@ var MOUSE_SENSITIVITY = 3.14;
 var lastPageX = 0;
 var lastPageY = 0;
 
+var animation_start;
 var is_animation_running;
 var prev_key_frame;
 var prev_position;
@@ -28,6 +33,8 @@ var prev_rotation;
 var next_rotation;
 var position_queue;
 var rotation_queue;
+
+var experiment_run_id;
 
 function resetCamera()
 {
@@ -70,7 +77,22 @@ function loadMesh(pk)
             resetCamera();
 
             var url = sceneMetadata.fields["url"] + "/mesh.js";
-            jsonLoader.load(url, onMeshLoaded);
+            jsonLoader.load(url, function(geometry, materials) {
+                onMeshLoaded(geometry, materials, scene);
+            });
+            logger.info("Loading mesh at '" + url + "'...");
+        });
+
+    $.ajax({url: '/shady/scenes/get/' + pk + '/',
+        async: false})
+        .done(function(result) {
+            sceneMetadata = $.parseJSON(result)[0];
+            resetCamera();
+
+            var url = sceneMetadata.fields["url"] + "/mesh.js";
+            jsonLoader.load(url, function(geometry, materials) {
+                onMeshLoaded(geometry, materials, scene2);
+            });
             logger.info("Loading mesh at '" + url + "'...");
         });
 }
@@ -104,7 +126,15 @@ function startAnimation(keyFrames)
     next_rotation = rotation_queue.shift().clone();
 
     is_animation_running = true;
+    animation_start = new Date().getTime();
     prev_key_frame = new Date().getTime();
+
+    $.ajax({
+        url: '/shady/experiments/start/' + EXPERIMENT_ID + '/',
+        async: false})
+        .done(function(result) {
+            experiment_run_id = parseInt(result);
+    });
 }
 
 function animate()
@@ -296,7 +326,7 @@ function onMouseMove(ev)
     camera.quaternion.normalize();
 }
 
-function onMeshLoaded(geometry, materials)
+function onMeshLoaded(geometry, materials, scene)
 {
     scene.remove(mesh);
 
@@ -316,7 +346,6 @@ function onMeshLoaded(geometry, materials)
 
     scene.add(mesh);
 
-    div.append(renderer.domElement);
     onResize();
     gameLoop();
 
@@ -341,7 +370,7 @@ function toggleFullScreen()
     }
     else
     {
-        var div = document.getElementById("experiment-block-content");
+        var div = document.getElementById("display-section");
 
         div.requestFullScreen =
             div.requestFullScreen ||
@@ -356,9 +385,11 @@ function toggleFullScreen()
 
 function onResize()
 {
-    renderer.setSize(div.width(), div.height());
+    var experiment = $("div#experiment-block");
+    renderer.setSize(experiment.width(), experiment.height());
+    renderer2.setSize(experiment.width(), experiment.height());
 
-    camera.aspect = div.width() / div.height();
+    camera.aspect = experiment.width() / experiment.height();
     camera.updateProjectionMatrix();
 }
 
@@ -366,8 +397,13 @@ function main()
 {
     include("lib/three.js");
 
-    div = $('#experiment-block-content')
-    renderer = new THREE.WebGLRenderer();
+    div = $('#display-section')
+
+    var reference_canvas = document.getElementById("reference-canvas");
+    renderer = new THREE.WebGLRenderer({canvas: reference_canvas});
+
+    var experiment_canvas = document.getElementById("experiment-canvas");
+    renderer2 = new THREE.WebGLRenderer({canvas: experiment_canvas});
 
     $(window).keydown(onKeyDown);
     $(window).keyup(onKeyUp);
@@ -391,6 +427,7 @@ function reset()
     keyMap = [];
     position_queue = [];
     rotation_queue = [];
+    frame_counter = 0;
 
     camera = new THREE.PerspectiveCamera(FOV, 1, NEAR, FAR);
 
@@ -398,13 +435,46 @@ function reset()
     mesh = null;
 
     scene = new THREE.Scene();
-
-    var ambient = new THREE.AmbientLight(0xAAAAAA);
-    scene.add(ambient);
+    scene2 = new THREE.Scene();
 
     var point = new THREE.PointLight(0xA0A0A0);
     point.position.set(0, 0, 0);
     scene.add(point);
+
+    var point2 = new THREE.PointLight(0xA0A0A0);
+    point2.position.set(0, 0, 0);
+    scene2.add(point2);
+}
+
+function recordError()
+{
+    var reference = $("canvas#reference-canvas");
+    var width = reference.width();
+    var height = reference.height();
+    var ctx = renderer.context;
+    var reference_pixels = new Uint8Array(4 * width * height);
+    ctx.readPixels(0, 0, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, reference_pixels);
+
+    var ctx = renderer2.context;
+    var experiment_pixels = new Uint8Array(4 * width * height);
+    ctx.readPixels(0, 0, width, height, ctx.RGBA, ctx.UNSIGNED_BYTE, experiment_pixels);
+
+    var time = new Date().getTime() - animation_start;
+
+    var error;
+    var worker = new Worker(PATH + "lib/calculate_error.js");
+    worker.onmessage = function (e) {
+        error = e.data;
+
+        $.ajax("/shady/experiments/log/error/" + experiment_run_id + "/", {
+            data: error,
+            type: "POST",
+            error: function() {
+                logger.error("Could not send experiment log.");
+            }
+        });
+    };
+    worker.postMessage([reference_pixels, experiment_pixels, time]);
 }
 
 function gameLoop()
@@ -419,8 +489,15 @@ function gameLoop()
     if (mesh !== null)
     {
         renderer.render( scene, camera );
+        renderer2.render(scene2, camera);
     }
+
+    if ((frame_counter !== 0) && (frame_counter % 59 === 0) && is_animation_running)
+    {
+        recordError();
+    }
+
+    frame_counter++;
 
     requestAnimationFrame(gameLoop);
 }
-
