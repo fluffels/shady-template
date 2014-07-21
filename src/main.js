@@ -333,6 +333,9 @@ function onMeshLoaded(geometry, materials, scene)
     material = new THREE.MeshFaceMaterial(materials);
     mesh = new THREE.Mesh(geometry, material);
 
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
     var ms = mesh.material.materials;
     for (i in ms)
     {
@@ -346,6 +349,9 @@ function onMeshLoaded(geometry, materials, scene)
 
     scene.add(mesh);
 
+    var ambient = new THREE.AmbientLight(0xFFFFFF);
+    scene.add(light);
+
     var light = sceneMetadata.fields.light_position.split(",");
     var light_vec = new THREE.Vector3(
         parseFloat(light[0]),
@@ -353,9 +359,16 @@ function onMeshLoaded(geometry, materials, scene)
         parseFloat(light[2])
     );
 
-    var point = new THREE.PointLight(0xA0A0A0);
-    point.position = light_vec.clone();
-    scene.add(point);
+    var light = new THREE.SpotLight(0xA0A0A0);
+    light.position = light_vec.clone();
+    light.castShadow = true;
+    light.shadowDarkness = 0.5;
+    light.shadowCameraVisible = true;
+    light.shadowCameraRight = 10;
+    light.shadowCameraLeft = -10;
+    light.shadowCameraTop = 10;
+    light.shadowCameraBottom = -10;
+    scene.add(light);
 
     onResize();
     gameLoop();
@@ -421,6 +434,8 @@ function main()
 
     var experiment_canvas = document.getElementById("experiment-canvas");
     renderer2 = new THREE.WebGLRenderer({canvas: experiment_canvas});
+    renderer2.shadowMapEnabled = true;
+
 
     $(window).keydown(onKeyDown);
     $(window).keyup(onKeyUp);
