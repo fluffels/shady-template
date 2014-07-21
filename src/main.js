@@ -346,6 +346,17 @@ function onMeshLoaded(geometry, materials, scene)
 
     scene.add(mesh);
 
+    var light = sceneMetadata.fields.light_position.split(",");
+    var light_vec = new THREE.Vector3(
+        parseFloat(light[0]),
+        parseFloat(light[1]),
+        parseFloat(light[2])
+    );
+
+    var point = new THREE.PointLight(0xA0A0A0);
+    point.position = light_vec.clone();
+    scene.add(point);
+
     onResize();
     gameLoop();
 
@@ -442,14 +453,6 @@ function reset()
 
     scene = new THREE.Scene();
     scene2 = new THREE.Scene();
-
-    var point = new THREE.PointLight(0xA0A0A0);
-    point.position.set(0, 0, 0);
-    scene.add(point);
-
-    var point2 = new THREE.PointLight(0xA0A0A0);
-    point2.position.set(0, 0, 0);
-    scene2.add(point2);
 }
 
 function recordError()
