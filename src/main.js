@@ -367,6 +367,8 @@ function toggleFullScreen()
             /* Yep, webkit's one is all lower case. */
             document.webkitExitFullscreen;
         document.exitFullScreen();
+
+        onResize();
     }
     else
     {
@@ -380,16 +382,20 @@ function toggleFullScreen()
             letter keys, RequestFulLScreen doesn't. */
             div.webkitRequestFullscreen;
         div.requestFullScreen();
+
+        onResize();
     }
 }
 
 function onResize()
 {
-    var experiment = $("div#experiment-block");
-    renderer.setSize(experiment.width(), experiment.height());
-    renderer2.setSize(experiment.width(), experiment.height());
+    var display = $("div#display-section");
+    var width = display.width() / 2.0;
+    var height = display.height();
 
-    camera.aspect = experiment.width() / experiment.height();
+    renderer.setSize(width, height);
+    renderer2.setSize(width, height);
+    camera.aspect = width / height;
     camera.updateProjectionMatrix();
 }
 
